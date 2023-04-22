@@ -31,6 +31,10 @@ const trainingClass = mongoose.model('TrainingClass', new mongoose.Schema({
         type: Number,
         required: true,
     },
+    registrationDeadline: {
+        type: Date,
+        required: true,
+    },
     participants: [
         {
             user: {

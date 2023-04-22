@@ -59,9 +59,11 @@ exports.createTrainingClasses = async (req, res) => {
         return res.status(400).json({ errors: errors.array() });
     }
 
+
     try {
 
         const { title, description, startDate, endDate, type, maxParticipants, maxRegistrations } = req.body;
+
 
         // Create a new training class object
         const newTrainingClass = new TrainingClass({
@@ -71,10 +73,12 @@ exports.createTrainingClasses = async (req, res) => {
             endDate,
             type,
             maxParticipants,
-            maxRegistrations
+            maxRegistrations,
+            registrationDeadline: new Date(req.body.registrationDeadline),
         });
 
         // Save the new training class object to the database
+
         const savedTrainingClass = await newTrainingClass.save();
 
         // Send a success response with the saved training class

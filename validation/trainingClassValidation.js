@@ -21,6 +21,11 @@ exports.createTrainingClassValidator = [
         .withMessage('End date is required')
         .isISO8601()
         .withMessage('End date must be a valid ISO 8601 date'),
+    body('registrationDeadline')
+        .notEmpty()
+        .withMessage('DeadLine date is required')
+        .isISO8601()
+        .withMessage('DeadLine date must be a valid ISO 8601 date'),
     body('type')
         .notEmpty()
         .withMessage('Class type is required')
@@ -36,6 +41,7 @@ exports.createTrainingClassValidator = [
         .withMessage('Maximum registrations is required')
         .isInt({ min: 1 })
         .withMessage('Maximum registrations must be an integer greater than 0'),
+
 ];
 
 
