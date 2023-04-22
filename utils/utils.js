@@ -1,20 +1,19 @@
-const { PhoneNumberUtil, PhoneNumberFormat } = require('google-libphonenumber');
-const phoneNumberUtil = PhoneNumberUtil.getInstance();
+const PhoneNumberUtil = require('google-libphonenumber').PhoneNumberUtil;
+const PNF = require('google-libphonenumber').PhoneNumberFormat;
 
-function validatePhoneNumber(phoneNumber, defaultRegion) {
+function validatePhoneNumber(phone) {
+    const phoneUtil = PhoneNumberUtil.getInstance();
+
     try {
-        const parsedPhoneNumber = phoneNumberUtil.parse(phoneNumber, defaultRegion);
-        const isValid = phoneNumberUtil.isValidNumber(parsedPhoneNumber);
-
-        if (isValid) {
-            const formattedPhoneNumber = phoneNumberUtil.format(parsedPhoneNumber, PhoneNumberFormat.E164);
-            return formattedPhoneNumber;
-        } else {
-            return null;
+        const parsedPhoneNumber = phoneUtil.parseAndKeepRawInput(phone);
+        if (phoneUtil.isValidNumber(parsedPhoneNumber)) {
+            return phoneUtil.format(parsedPhoneNumber, PNF.E164);
         }
     } catch (error) {
-        return null;
+        console.error('Error parsing phone number:', error);
     }
+
+    return null;
 }
 
 module.exports = { validatePhoneNumber };

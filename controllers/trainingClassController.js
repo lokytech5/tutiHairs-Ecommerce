@@ -210,6 +210,12 @@ exports.registerUsersForTrainingClass = async (req, res) => {
         if (!req.user) {
             const { email, password, username, phone, firstName, lastName } = req.body;
 
+            const validatedPhoneNumber = validatePhoneNumber(phone);
+
+            if (!validatedPhoneNumber) {
+                return res.status(400).send({ error: 'Invalid phone number' });
+            }
+
             if (!firstName || !lastName) {
                 return res.status(400).send({ error: 'First and last names are required' });
             }
@@ -225,7 +231,7 @@ exports.registerUsersForTrainingClass = async (req, res) => {
             if (existingUser) {
                 userId = existingUser._id;
             } else {
-                newUser = new User({ email, password, username, profile: { firstName, lastName, phone } });
+                newUser = new User({ email, password, username, profile: { firstName, lastName, phone: validatePhoneNumber } });
                 // Hash the password before saving the new user
                 const salt = await bcrypt.genSalt(10);
                 newUser.password = await bcrypt.hash(newUser.password, salt);
