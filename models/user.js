@@ -19,6 +19,10 @@ const userSchema = new mongoose.Schema({
         minlength: 5,
         maxlength: 1024
     },
+    resetPasswordToken: {
+            type: String,
+            default: null,
+        },
     username: {
         type: String,
         required: true,
@@ -60,6 +64,11 @@ userSchema.methods.generateAuthToken = function () {
     const token = jwt.sign({ _id: this._id, isAdmin: this.isAdmin }, config.jwtPrivateKey, { expiresIn: config.jwtExpiresIn });
     return token;
 }
+
+userSchema.methods.hashPassword = async function () {
+    const hashedPassword = await bcrypt.hash(this.password, saltRounds);
+    this.password = hashedPassword;
+};
 
 const User = mongoose.model('User', userSchema);
 

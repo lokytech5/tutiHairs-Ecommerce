@@ -1,10 +1,11 @@
+const { validationResult } = require('express-validator');
+const bcrypt = require('bcrypt')
+const { validatePhoneNumber } = require('../utils/utils')
 const TrainingClass = require('../models/trainingClass');
 const ClassTypePrice = require('../models/classTypePrice');
-const { isEmail } = require('validator');
-const bcrypt = require('bcrypt')
-const { sendConfirmationEmailForRegisteredTraningClass } = require('../mails/email');
 const User = require('../models/user');
-const { validationResult } = require('express-validator');
+const { isEmail } = require('validator');
+const { sendConfirmationEmailForRegisteredTraningClass } = require('../mails/email');
 
 exports.getAllTrainingClasses = async (req, res) => {
     try {

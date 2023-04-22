@@ -6,32 +6,32 @@ const juice = require('juice');
 
 //*Configuring NodeMail Notification for Gmail
 const transporter = nodemailer.createTransport({
-    service: 'Gmail',
-    port: 465,
-    auth: {
-        user: process.env.GMAIL_USER_NAME,
-        pass: process.env.GMAIL_PASSWORD,
-    }
+  service: 'Gmail',
+  port: 465,
+  auth: {
+    user: process.env.GMAIL_USER_NAME,
+    pass: process.env.GMAIL_PASSWORD,
+  }
 })
 
 
 
 function generateGoogleCalendarLink(trainingClass, location) {
-    const startDate = moment(trainingClass.startDate).format('YYYYMMDDTHHmmss');
-    const endDate = moment(trainingClass.endDate).format('YYYYMMDDTHHmmss');
-    const eventTitle = encodeURIComponent(trainingClass.title);
-    const details = encodeURIComponent("Training Class - " + trainingClass.title + "\n" + trainingClass.description);
-    const eventLocation = encodeURIComponent(location);
+  const startDate = moment(trainingClass.startDate).format('YYYYMMDDTHHmmss');
+  const endDate = moment(trainingClass.endDate).format('YYYYMMDDTHHmmss');
+  const eventTitle = encodeURIComponent(trainingClass.title);
+  const details = encodeURIComponent("Training Class - " + trainingClass.title + "\n" + trainingClass.description);
+  const eventLocation = encodeURIComponent(location);
 
-    return `https://www.google.com/calendar/render?action=TEMPLATE&text=${eventTitle}&dates=${startDate}/${endDate}&details=${details}&location=${eventLocation}`;
+  return `https://www.google.com/calendar/render?action=TEMPLATE&text=${eventTitle}&dates=${startDate}/${endDate}&details=${details}&location=${eventLocation}`;
 }
 
 
 
 async function sendConfirmationEmailForRegisteredTraningClass(user, trainingClass) {
-    const googleCalendarLink = generateGoogleCalendarLink(trainingClass);
+  const googleCalendarLink = generateGoogleCalendarLink(trainingClass);
 
-    const emailTemplate = `
+  const emailTemplate = `
 <!DOCTYPE html>
 <html>
   <head>
@@ -88,24 +88,52 @@ async function sendConfirmationEmailForRegisteredTraningClass(user, trainingClas
 </html>
 `;
 
-    const inlinedTemplate = juice(emailTemplate);
+  const inlinedTemplate = juice(emailTemplate);
 
-    const mailOptions = {
-        from: `"Tuti Hairs" <${process.env.TUTI_HAIRS_MAIL}>`,
-        to: user.email,
-        subject: "Training Class Registration Confirmation",
-        html: inlinedTemplate,
-    };
+  const mailOptions = {
+    from: `"Tuti Hairs" <${process.env.TUTI_HAIRS_MAIL}>`,
+    to: user.email,
+    subject: "Training Class Registration Confirmation",
+    html: inlinedTemplate,
+  };
 
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            console.log('Error sending registration email: ', error);
-        } else {
-            console.log('Registration email sent: ', info.response);
-        }
-    });
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.log('Error sending registration email: ', error);
+    } else {
+      console.log('Registration email sent: ', info.response);
+    }
+  });
 }
 
+
+async function sendOTPEmail(user, otp, token) {
+  const resetLink = `https://yourfrontendwebsite.com/reset-password?token=${token}`;
+  const mailOptions = {
+    from: `"Tuti Hair" <${process.env.TUTI_HAIRS_MAIL}>`,
+    to: user.email,
+    subject: "Password Reset OTP",
+    html: `
+      <h1>Password Reset Request</h1>
+      <p>Your One-Time Password (OTP) for resetting your password is:</p>
+      <h2>${otp}</h2>
+      <p>Click the following link to reset your password:</p>
+      <a href="${resetLink}">${resetLink}</a>
+      <p>Please note that this OTP and link will expire in 15 minutes.</p>
+    `,
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.log('Error sending OTP email: ', error);
+    } else {
+      console.log('OTP email sent: ', info.response);
+    }
+  });
+}
+
+
 module.exports = {
-    sendConfirmationEmailForRegisteredTraningClass
+  sendOTPEmail,
+  sendConfirmationEmailForRegisteredTraningClass
 }
