@@ -1,0 +1,4 @@
+{
+     "jwtPrivateKey": "JWT_PRIVATE_KEY",
+    "jwtExpiresIn": "JWT_EXPIRES_IN"
+}
