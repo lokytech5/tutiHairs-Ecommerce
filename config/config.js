@@ -2,7 +2,7 @@ const cloudinary = require('cloudinary').v2;
 
 const config = {
     jwtPrivateKey: process.env.JWT_PRIVATE_KEY,
-    jwtExpiresIn: process.env.JWT_EXPIRES_IN
+    jwtExpiresIn: "1h",
 };
 
 
@@ -12,9 +12,15 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
+const paystackConfig = {
+    secretKey: process.env.PAYSTACK_SECRET_KEY,
+    publicKey: process.env.PAYSTACK_PUBLIC_KEY,
+}
+
 
 module.exports = {
     config,
     cloudinary,
+    paystackConfig
 }
 

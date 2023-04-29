@@ -20,9 +20,9 @@ const userSchema = new mongoose.Schema({
         maxlength: 1024
     },
     resetPasswordToken: {
-            type: String,
-            default: null,
-        },
+        type: String,
+        default: null,
+    },
     username: {
         type: String,
         required: true,

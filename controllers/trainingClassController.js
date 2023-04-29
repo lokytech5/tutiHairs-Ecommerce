@@ -231,7 +231,7 @@ exports.registerUsersForTrainingClass = async (req, res) => {
             if (existingUser) {
                 userId = existingUser._id;
             } else {
-                newUser = new User({ email, password, username, profile: { firstName, lastName, phone: validatePhoneNumber } });
+                newUser = new User({ email, password, username, profile: { firstName, lastName, phone: validatedPhoneNumber } });
                 // Hash the password before saving the new user
                 const salt = await bcrypt.genSalt(10);
                 newUser.password = await bcrypt.hash(newUser.password, salt);

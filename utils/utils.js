@@ -5,7 +5,7 @@ function validatePhoneNumber(phone) {
     const phoneUtil = PhoneNumberUtil.getInstance();
 
     try {
-        const parsedPhoneNumber = phoneUtil.parseAndKeepRawInput(phone);
+        const parsedPhoneNumber = phoneUtil.parseAndKeepRawInput(phone, 'NG', 'GH');
         if (phoneUtil.isValidNumber(parsedPhoneNumber)) {
             return phoneUtil.format(parsedPhoneNumber, PNF.E164);
         }

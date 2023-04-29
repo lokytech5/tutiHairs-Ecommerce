@@ -101,7 +101,22 @@ exports.updateUsers = async (req, res) => {
 }
 
 
-exports.deleteUsers = async (req, res) => {
+exports.deleteOwnUser = async (req, res) => {
+    try {
+        const user = await User.findByIdAndDelete(req.user._id);
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.status(200).send({ message: 'User deleted successfully' });
+
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+}
+
+exports.deleteUserById = async (req, res) => {
     try {
         const user = await User.findByIdAndDelete(req.params.id);
 
@@ -114,7 +129,7 @@ exports.deleteUsers = async (req, res) => {
     } catch (error) {
         res.status(500).send({ error: error.message });
     }
-}
+};
 
 
 exports.getUserProfile = async (req, res) => {
@@ -131,13 +146,17 @@ exports.getUserProfile = async (req, res) => {
 
 
 exports.updateUserProfile = async (req, res) => {
+    console.log('Request body:', req.body);
     if (!req.body) {
         return res.status(400).send({ error: 'Request body is missing' });
     }
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
+        return res.status(400).json({
+            errors: errors.array(),
+            requestBody: req.body,
+        });
     }
 
 
@@ -155,7 +174,27 @@ exports.updateUserProfile = async (req, res) => {
 
         user.profile = { ...user.profile, ...profile };
 
-        // Check if an avatar file was provided
+        await user.save();
+
+        res.send({ message: 'Profile updated successfully', user });
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+};
+
+
+exports.uploadAvatar = async (req, res) => {
+    console.log('Request file:', req.file);
+    if (!req.file) {
+        return res.status(400).send({ error: 'Avatar file is missing' });
+    }
+
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            return res.status(404).send({ error: 'User not found' });
+        }
+
         if (req.file) {
             // Upload the avatar to Cloudinary and update the user's avatar field
             const result = await cloudinary.uploader.upload(req.file.path);
@@ -164,8 +203,9 @@ exports.updateUserProfile = async (req, res) => {
 
         await user.save();
 
-        res.send({ message: 'Profile updated successfully', user });
+        res.send({ message: 'Avatar uploaded successfully', user });
     } catch (error) {
         res.status(500).send({ error: error.message });
     }
 };
+

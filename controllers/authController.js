@@ -1,10 +1,14 @@
+
 const _ = require('lodash');
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
+
 const { validationResult } = require('express-validator')
 const bcrypt = require('bcrypt');
 const { config } = require('../config/config')
 const { sendOTPEmail } = require('../mails/email')
+console.log('JWT private key in authController:', config.jwtPrivateKey);
+
 
 
 function generateOTPAndToken(user) {
@@ -36,12 +40,18 @@ exports.createAuth = async (req, res) => {
         if (!validPassword) {
             return res.status(400).json({ msg: 'Invalid username or password' });
         }
+        console.log('JWT private key:', config.jwtPrivateKey);
         const token = user.generateAuthToken();
+
+        // Set JWT token as HttpOnly cookie
+        res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'strict' });
+
         res.send({ token, username: user.username });
 
     } catch (error) {
-        console.error(error.message);
-        res.status(500).send({ error: 'Error saving user to database' });
+        console.error('Error stack:', error.stack);
+        console.error('Error in createAuth:', error.message);
+        res.status(500).send({ error: 'Error during authentication process', details: error.message });
     }
 }
 

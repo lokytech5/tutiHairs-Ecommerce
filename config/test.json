@@ -1,0 +1,10 @@
+{
+  "jwtPrivateKey": "Tut32&*iE$56093!@commerce",
+  "db": "mongodb://127.0.0.1:27017/tutiEcommerceDB_test",
+  "port": 5000,
+  "cloudinary": {
+    "cloud_name": "de3flnwzn",
+    "api_key": "944123579485425",
+    "api_secret": "sTiHEy_M6Wv-KJJrEQ8z1xAo7aA"
+  }
+}

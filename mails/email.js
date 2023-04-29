@@ -108,7 +108,7 @@ async function sendConfirmationEmailForRegisteredTraningClass(user, trainingClas
 
 
 async function sendOTPEmail(user, otp, token) {
-  const resetLink = `https://yourfrontendwebsite.com/reset-password?token=${token}`;
+  const resetLink = `http://localhost:3000/reset-password?token=${token}`;
   const mailOptions = {
     from: `"Tuti Hair" <${process.env.TUTI_HAIRS_MAIL}>`,
     to: user.email,

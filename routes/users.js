@@ -9,11 +9,14 @@ const router = express.Router();
 
 router.get('/', [auth, admin], userController.getAllUsers);
 router.get('/me', auth, userController.getUserProfile);
-router.put('/profile', auth, avatarUpload.single('avatar'), updateUserProfileValidator, userController.updateUserProfile);
+router.delete('/me', auth, userController.deleteOwnUser);
+router.put('/profile', auth, updateUserProfileValidator, userController.updateUserProfile);
+router.post('/upload-avatar', auth, avatarUpload.single('avatar'), userController.uploadAvatar)
 router.post('/', createUserValidator, userController.createUsers);
 router.get('/:id', [auth, admin], userController.getUsersById);
 router.put('/:id', auth, updateUserValidator, userController.updateUsers);
-router.delete('/:id', [auth, admin], userController.deleteUsers);
+router.delete('/:id', [auth, admin], userController.deleteUserById);
+
 
 
 module.exports = router;
