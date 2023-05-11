@@ -20,6 +20,38 @@ const productStorage = new CloudinaryStorage({
         };
     },
 });
+const categoryStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: (req, file) => {
+        // Extract the file extension from the mimetype
+        const extension = file.mimetype.split('/')[1];
+
+        // Map the extension to the format supported by Cloudinary
+        const format = extension === 'jpeg' ? 'jpg' : extension;
+
+        return {
+            folder: 'hairCategories',
+            format: format,
+            public_id: file.originalname,
+        };
+    },
+});
+const curatedCollectionStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: (req, file) => {
+        // Extract the file extension from the mimetype
+        const extension = file.mimetype.split('/')[1];
+
+        // Map the extension to the format supported by Cloudinary
+        const format = extension === 'jpeg' ? 'jpg' : extension;
+
+        return {
+            folder: 'curatedCollections',
+            format: format,
+            public_id: file.originalname,
+        };
+    },
+});
 
 
 const avatarStorage = new CloudinaryStorage({
@@ -37,6 +69,8 @@ const avatarStorage = new CloudinaryStorage({
 });
 
 const productUpload = multer({ storage: productStorage });
+const categoryUpload = multer({ storage: categoryStorage });
+const curatedCollectionUpload = multer({ storage: curatedCollectionStorage });
 const avatarUpload = multer({ storage: avatarStorage });
 
-module.exports = { productUpload, avatarUpload };
+module.exports = { productUpload, categoryUpload, avatarUpload, curatedCollectionUpload };

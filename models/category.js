@@ -18,6 +18,11 @@ const category = mongoose.model('Category', new mongoose.Schema({
         max: 100,
     },
 
+    image: {
+        type: String,
+        required: true,
+    },
+
     colors: {
         type: [String],
         required: true,

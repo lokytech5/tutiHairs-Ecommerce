@@ -4,9 +4,14 @@ const { nanoid } = require('nanoid');
 
 
 exports.getAllProduct = async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
     try {
-        const product = await Product.find().populate('category');
-        res.status(200).send({ product })
+        const product = await Product.find().skip(skip).limit(limit).populate('category');
+        const totalProduct = await Product.countDocuments();
+        const totalPages = Math.ceil(totalProduct / limit);
+        res.status(200).send({ product, totalPages })
     } catch (error) {
         console.error(error);
         res.status(500).send({ error: 'Error retrieving products from database' });
@@ -26,6 +31,17 @@ exports.getProductById = async (req, res) => {
     }
 }
 
+exports.getProductsByCategory = async (req, res) => {
+    try {
+        const categoryId = req.params.categoryId;
+        const products = await Product.find({ category: categoryId }).populate('category');
+        res.status(200).json(products);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
 
 exports.createProduct = async (req, res) => {
 
@@ -42,6 +58,10 @@ exports.createProduct = async (req, res) => {
         return res.status(400).json({ error: 'Image is required' });
     }
 
+    if (!req.body.category) {
+        return res.status(400).json({ error: 'Category is required' });
+    }
+
 
 
     const { name, description, price, category, stock } = req.body;
@@ -49,11 +69,8 @@ exports.createProduct = async (req, res) => {
     //Getting image url from uploaded file
     const image = req.file.path;
 
-    const id = nanoid();
-
     try {
         const newProduct = new Product({
-            id,
             name,
             description,
             price,

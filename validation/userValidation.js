@@ -23,22 +23,34 @@ exports.createUserValidator = [
 
 exports.updateUserValidator = [
     check('username')
-        .optional()
+        .optional({ checkFalsy: true })
         .trim()
         .isLength({ min: 3, max: 50 })
         .withMessage('Username must be between 3 and 50 characters'),
 
     check('password')
-        .optional()
-        .isLength({ min: 8, max: 128 })
-        .withMessage('Password must be between 8 and 128 characters'),
+        .optional({ checkFalsy: true })
+        .isLength({ min: 3, max: 128 })
+        .withMessage('Password must be between 3 and 128 characters'),
 
     check('email')
-        .optional()
+        .optional({ checkFalsy: true })
         .trim()
         .isEmail()
         .withMessage('Email must be a valid email address')
         .normalizeEmail(),
+
+    (req, res, next) => {
+        const errors = validationResult(req);
+
+        if (!errors.isEmpty()) {
+            console.log("Validation Errors:", errors.array());
+            console.log("Request Body:", req.body);
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        next();
+    },
 ];
 
 
@@ -62,4 +74,26 @@ exports.updateUserProfileValidator = [
         .withMessage('Phone number must be between 10 and 15 characters'),
 
     // Add validation for other fields as necessary
+];
+
+exports.validateNotificationPreferences = [
+    check('emailNotifications')
+        .optional()
+        .isBoolean()
+        .withMessage('Email notifications preference must be a boolean value'),
+
+    check('pushNotifications')
+        .optional()
+        .isBoolean()
+        .withMessage('Push notifications preference must be a boolean value'),
+
+    (req, res, next) => {
+        const errors = validationResult(req);
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        next();
+    },
 ];

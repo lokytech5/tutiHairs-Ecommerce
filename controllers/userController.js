@@ -1,5 +1,6 @@
 const _ = require('lodash');
 const User = require('../models/user');
+const Cart = require('../models/shoppingCart');
 const { validationResult } = require('express-validator')
 const bcrypt = require('bcrypt')
 const express = require('express');
@@ -54,6 +55,11 @@ exports.createUsers = async (req, res) => {
         user.password = await bcrypt.hash(user.password, salt)
 
         const savedUser = await user.save();
+
+        //Create a new cart for the user
+        const cart = new Cart({ user: savedUser._id, items: [] });
+        await cart.save();
+
         const token = user.generateAuthToken();
         res.header('x-auth-token', token).send(_.pick(savedUser, ['_id', 'username', 'email']));
     } catch (error) {
@@ -64,6 +70,8 @@ exports.createUsers = async (req, res) => {
 
 
 exports.updateUsers = async (req, res) => {
+    console.log('Request body:', req.body);
+    console.log('Request params:', req.params);
 
     if (!req.body) {
         return res.status(400).send({ error: 'Request body is missing' });
@@ -99,6 +107,32 @@ exports.updateUsers = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 }
+
+exports.verifyCurrentPassword = async (req, res) => {
+    const { userId, currentPassword } = req.body;
+
+    // Validate the request body
+    if (!userId || !currentPassword) {
+        return res.status(400).send({ error: 'User ID and current password are required' });
+    }
+    try {
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+
+        if (isMatch) {
+            res.status(200).json({ success: true });
+        } else {
+            res.status(401).json({ error: 'Incorrect current password' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
 
 
 exports.deleteOwnUser = async (req, res) => {
@@ -208,4 +242,46 @@ exports.uploadAvatar = async (req, res) => {
         res.status(500).send({ error: error.message });
     }
 };
+
+
+exports.updateNotificationPreferences = async (req, res) => {
+    if (!req.body) {
+        return res.status(400).send({ error: 'Request body is missing' });
+    }
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { emailNotifications, pushNotifications } = req.body;
+
+    if (emailNotifications === undefined && pushNotifications === undefined) {
+        return res.status(400).send({ error: 'At least one preference should be provided' });
+    }
+
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            return res.status(404).send({ error: 'User not found' });
+        }
+
+        if (emailNotifications !== undefined) {
+            user.notificationPreferences.emailNotifications = emailNotifications;
+        }
+
+        if (pushNotifications !== undefined) {
+            user.notificationPreferences.pushNotifications = pushNotifications;
+        }
+
+        await user.save();
+        res.send({ message: 'Notification preferences updated successfully', user });
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+};
+
+
+
+
 

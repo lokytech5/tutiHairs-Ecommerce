@@ -71,6 +71,11 @@ exports.updateCategoryValidator = [
         .isInt({ min: 1, max: 500 })
         .withMessage('Grams must be an integer between 1 and 500'),
 
+    body('image')
+        .optional()
+        .notEmpty().withMessage('Image must not be empty')
+        .isURL().withMessage('Image must be a valid URL'),
+
     check('length')
         .optional()
         .custom((length, { req }) => {

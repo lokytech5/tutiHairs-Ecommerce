@@ -12,8 +12,9 @@ const auth = require('./routes/auth')
 const TrainingClasses = require('./routes/trainingClasses')
 const ClassTypePrice = require('./routes/classTypePrices')
 const Orders = require('./routes/orders')
-const ShoppingCart = require('./routes/shoppingCarts')
+const Cart = require('./routes/shoppingCarts')
 const Payment = require('./routes/payment')
+const curatedCollection = require('./routes/curatedCollection')
 const app = express();
 
 
@@ -36,8 +37,9 @@ app.use('/api/auth', auth);
 app.use('/api/trainingClasses', TrainingClasses);
 app.use('/api/classTypePrices', ClassTypePrice);
 app.use('/api/orders', Orders);
-app.use('/api/shoppingCart', ShoppingCart);
+app.use('/api/shoppingCart', Cart);
 app.use('/api/payments', Payment);
+app.use('/api/curatedCollection', curatedCollection);
 
 
 //* Connecting to MongoDB database

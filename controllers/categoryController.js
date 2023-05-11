@@ -2,9 +2,15 @@ const Category = require('../models/category');
 const { validationResult } = require('express-validator')
 
 exports.getAllCategories = async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 4;
+    const skip = (page - 1) * limit;
+
     try {
-        const categories = await Category.find();
-        res.status(200).send({ categories });
+        const categories = await Category.find().skip(skip).limit(limit);
+        const totalCategories = await Category.countDocuments();
+        const totalPages = Math.ceil(totalCategories / limit);
+        res.status(200).send({ categories, totalPages });
     } catch (error) {
         res.status(500).send({ error: error.message });
     }
@@ -35,11 +41,16 @@ exports.createCategories = async (req, res) => {
         return res.status(400).json({ errors: errors.array() });
     }
 
+    if (!req.file) {
+        return res.status(400).json({ error: 'Image is required' });
+    }
+
     const categoryData = {
         name: req.body.name,
         description: req.body.description,
         inches: req.body.inches,
-        colors: req.body.colors
+        colors: req.body.colors,
+        image: req.file.path
     };
 
     if (['Closure', 'Frontal'].includes(req.body.name)) {
@@ -92,6 +103,10 @@ exports.updateCategories = async (req, res) => {
 
     if (req.body.colors) {
         updateData.colors = req.body.colors;
+    }
+
+    if (req.body.image) {
+        updateData.image = req.body.image;
     }
 
     if (['Closure', 'Frontal'].includes(req.body.name)) {

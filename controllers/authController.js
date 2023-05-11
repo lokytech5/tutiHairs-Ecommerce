@@ -7,7 +7,6 @@ const { validationResult } = require('express-validator')
 const bcrypt = require('bcrypt');
 const { config } = require('../config/config')
 const { sendOTPEmail } = require('../mails/email')
-console.log('JWT private key in authController:', config.jwtPrivateKey);
 
 
 

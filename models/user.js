@@ -51,6 +51,17 @@ const userSchema = new mongoose.Schema({
             minlength: 10,
             maxlength: 15
         },
+    },
+
+    notificationPreferences: {
+        emailNotifications: {
+            type: Boolean,
+            default: true,
+        },
+        pushNotifications: {
+            type: Boolean,
+            default: true,
+        },
 
     },
 
