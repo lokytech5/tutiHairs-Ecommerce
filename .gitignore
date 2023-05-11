@@ -133,3 +133,6 @@ dist
 
 # jest 
 coverage/
+
+
+test.json
