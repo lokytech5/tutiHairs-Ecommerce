@@ -52,6 +52,22 @@ const curatedCollectionStorage = new CloudinaryStorage({
         };
     },
 });
+const trainingClassStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: (req, file) => {
+        // Extract the file extension from the mimetype
+        const extension = file.mimetype.split('/')[1];
+
+        // Map the extension to the format supported by Cloudinary
+        const format = extension === 'jpeg' ? 'jpg' : extension;
+
+        return {
+            folder: 'trainingClasses',
+            format: format,
+            public_id: file.originalname,
+        };
+    },
+});
 
 
 const avatarStorage = new CloudinaryStorage({
@@ -70,7 +86,8 @@ const avatarStorage = new CloudinaryStorage({
 
 const productUpload = multer({ storage: productStorage });
 const categoryUpload = multer({ storage: categoryStorage });
+const trainingClassUpload = multer({ storage: trainingClassStorage });
 const curatedCollectionUpload = multer({ storage: curatedCollectionStorage });
 const avatarUpload = multer({ storage: avatarStorage });
 
-module.exports = { productUpload, categoryUpload, avatarUpload, curatedCollectionUpload };
+module.exports = { productUpload, categoryUpload, avatarUpload, trainingClassUpload, curatedCollectionUpload };

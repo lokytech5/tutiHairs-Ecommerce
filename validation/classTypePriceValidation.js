@@ -5,7 +5,8 @@ exports.createClassTypePriceValidator = [
         .trim()
         .notEmpty()
         .withMessage('Class type is required')
-        .isIn(['Sponsor Advert', 'Human Hair Class', 'Hairblend Class'])
+        .isIn(['Sponsor Advert Class', 'Human Hair Class', 'Hairblend & Attachment Class',
+            'Kiddies Wears Importation Class', 'Bags, Dress & Shoes Importation Class'])
         .withMessage('Class type must be one of the following: Sponsor Advert, Human Hair Class, or Hairblend Class'),
 
     body('price')
@@ -18,8 +19,15 @@ exports.createClassTypePriceValidator = [
 exports.updateClassTypePriceValidator = [
     body('classType')
         .optional()
-        .isIn(['Sponsor Advert', 'Human Hair Class', 'Hairblend Class'])
+        .isIn(['Sponsor Advert Class', 'Human Hair Class', 'Hairblend & Attachment Class',
+            'Kiddies Wears Importation Class', 'Bags, Dress & Shoes Importation Class'])
         .withMessage('Invalid class type'),
+
+    body('image')
+        .optional()
+        .notEmpty().withMessage('Image must not be empty')
+        .isURL().withMessage('Image must be a valid URL'),
+
     body('price')
         .optional()
         .isNumeric()

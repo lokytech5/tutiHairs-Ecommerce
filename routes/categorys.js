@@ -8,6 +8,7 @@ const router = express.Router();
 
 
 router.get('/', categoryController.getAllCategories);
+router.get('/all', categoryController.getAllCategoriesWithoutLimit);
 router.get('/:id', categoryController.getCategoriesById);
 router.post('/', categoryUpload.single('image'), createCategoryValidator, categoryController.createCategories);
 router.put('/:id', updateCategoryValidator, categoryController.updateCategories);

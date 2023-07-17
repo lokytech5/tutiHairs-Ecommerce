@@ -49,6 +49,11 @@ exports.initializeTransaction = async (req, res) => {
 exports.verifyTransaction = async (req, res) => {
     const reference = req.body.reference;
 
+    if (!reference || typeof reference !== 'string') {
+        return res.status(400).send({ error: 'Invalid reference number' });
+    }
+
+
     const options = {
         hostname: 'api.paystack.co',
         port: 443,
@@ -67,68 +72,18 @@ exports.verifyTransaction = async (req, res) => {
         });
 
         apiResponse.on('end', () => {
-            console.log(JSON.parse(data))
-            res.status(200).send(JSON.parse(data));
+            const responseData = JSON.parse(data);
+
+            // Check if the Paystack API returned an error
+            if (responseData.status === false) {
+                return res.status(500).send({ error: responseData.message });
+            }
+
+            res.status(200).send(responseData);
         })
     }).on('error', error => {
         console.error(error);
         res.status(500).send({ error: 'Error in Paystack transaction verification' });
     })
         .end();
-};
-
-
-const processOrderPayment = async (transactionDetails) => {
-    // Implement the logic for processing order payments
-    // Update order status, notify the user, etc.
-};
-
-const processTrainingClassPayment = async (transactionDetails) => {
-    // Implement the logic for processing training class payments
-    // Register the user for the class, generate a unique code, send an email, etc.
-};
-
-
-
-
-exports.handleWebhook = async (req, res) => {
-
-    // Handle the event
-    const event = req.body;
-
-    try {
-        switch (event.event) {
-            case 'charge.success':
-                const transactionDetails = await verifyTransaction(event.data.reference);
-
-                if (!transactionDetails) {
-                    // Transaction verification failed, return an error or handle as needed
-                    break;
-                }
-
-                if (transactionDetails.metadata && transactionDetails.metadata.paymentOption === 'order') {
-                    await processOrderPayment(transactionDetails);
-                } else if (transactionDetails.metadata && transactionDetails.metadata.paymentOption === 'trainingClass') {
-                    await processTrainingClassPayment(transactionDetails);
-                } else {
-                    return res.status(400).send({ error: 'Invalid payment option' });
-                }
-
-                break;
-
-            case 'charge.failed':
-                // Handle failed payment
-                // Notify the user, update their account status, etc.
-                break;
-
-            // Add other event cases you want to handle
-
-            default:
-                return res.status(400).send({ error: 'Unhandled event type' });
-        }
-
-        res.status(200).send({ message: 'Webhook event processed' });
-    } catch (error) {
-        res.status(500).send({ error: error.message });
-    }
 };

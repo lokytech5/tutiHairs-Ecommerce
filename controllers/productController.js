@@ -1,19 +1,23 @@
 const Product = require('../models/product');
+const User = require('../models/user');
+const ProductView = require('../models/productView')
 const { validationResult } = require('express-validator')
-const { nanoid } = require('nanoid');
 
 
 exports.getAllProduct = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 5;
     const skip = (page - 1) * limit;
+    const search = req.query.search || '';
     try {
-        const product = await Product.find().skip(skip).limit(limit).populate('category');
-        const totalProduct = await Product.countDocuments();
+        const product = await Product.find({ name: { $regex: search, $options: 'i' } })
+            .skip(skip)
+            .limit(limit)
+            .populate('category');
+        const totalProduct = await Product.countDocuments({ name: { $regex: search, $options: 'i' } });
         const totalPages = Math.ceil(totalProduct / limit);
         res.status(200).send({ product, totalPages })
     } catch (error) {
-        console.error(error);
         res.status(500).send({ error: 'Error retrieving products from database' });
     }
 
@@ -25,13 +29,57 @@ exports.getProductById = async (req, res) => {
         if (!product) {
             return res.status(404).json({ error: 'Product not found' });
         }
-        res.status(200).json(product);
+
+        // Find or create the ProductView document for this product
+        let productView = await ProductView.findOne({ product: product._id });
+        if (!productView) {
+            productView = new ProductView({ product: product._id });
+        }
+
+        // Increment the view count and save the ProductView document
+        productView.viewCount++;
+        await productView.save();
+
+        const productData = product.toObject(); // Convert the product document to a regular JavaScript object
+        productData.viewCount = productView.viewCount; // Add the view count to the product data
+
+        res.status(200).json(productData);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 }
 
+
+exports.getProductViewCount = async (req, res) => {
+    try {
+        const productView = await ProductView.findOne({ product: req.params.id });
+        if (!productView) {
+            return res.status(404).json({ error: 'Product not found' });
+        }
+
+        res.status(200).json({ viewCount: productView.viewCount });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
 exports.getProductsByCategory = async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
+    try {
+        const categoryId = req.params.categoryId;
+        const products = await Product.find({ category: categoryId }).skip(skip).limit(limit).populate('category');
+        const totalProducts = await Product.countDocuments({ category: categoryId });
+        const totalPages = Math.ceil(totalProducts / limit);
+        res.status(200).json({ products, totalPages });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.getProductsByCategoryWithOutLimit = async (req, res) => {
     try {
         const categoryId = req.params.categoryId;
         const products = await Product.find({ category: categoryId }).populate('category');
@@ -62,8 +110,6 @@ exports.createProduct = async (req, res) => {
         return res.status(400).json({ error: 'Category is required' });
     }
 
-
-
     const { name, description, price, category, stock } = req.body;
 
     //Getting image url from uploaded file
@@ -78,8 +124,6 @@ exports.createProduct = async (req, res) => {
             category,
             stock,
         });
-
-        console.log('Saving product:', newProduct); // Add this line
 
         await newProduct.save();
         res.status(201).json(newProduct);
@@ -151,3 +195,84 @@ exports.deleteProduct = async (req, res) => {
         res.status(500).send({ error: error.message });
     }
 }
+
+
+exports.addProductReview = async (req, res) => {
+
+    try {
+        const product = await Product.findById(req.params.id);
+        if (!product) {
+            return res.status(404).json({ error: 'Product not found' });
+        }
+
+        const userId = req.user._id;
+        const review = req.body.reviewText;
+        const rating = req.body.rating;
+
+        // Check if user has already reviewed the product
+        const existingReview = product.reviews.find(review => review.userId.toString() === userId);
+        if (existingReview) {
+            return res.status(400).json({ error: 'You have already reviewed this product' });
+        }
+
+        // Assuming you have a User model and that the user's username is stored in the 'username' field
+        const reviewer = await User.findById(userId);
+        if (!reviewer) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const newReviewIndex = product.reviews.push({ userId, username: reviewer.username, review, rating }) - 1;
+
+        let ratingSum = 0;
+        for (let i = 0; i < product.reviews.length; i++) {
+            ratingSum += product.reviews[i].rating;
+        }
+
+        product.averageRating = product.reviews.length > 0 ? ratingSum / product.reviews.length : 0;
+
+        await product.save();
+
+        const newReview = product.reviews[newReviewIndex];
+
+        res.status(200).json(newReview);
+
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}
+
+
+exports.deleteProductReview = async (req, res) => {
+    try {
+
+        const productId = req.params.id;
+        const reviewId = req.params.reviewId;
+        const product = await Product.findById(productId);
+        if (!product) {
+            return res.status(404).json({ error: 'Product not found' });
+        }
+
+        // Find the index of the review in the product's reviews array
+        const reviewIndex = product.reviews.findIndex(r => r._id.toString() === reviewId);
+        // If the review was not found in the product's reviews array, send an error response
+        if (reviewIndex === -1) {
+            return res.status(404).json({ message: 'Review not found' });
+        }
+
+        // Remove the review from the product's reviews array
+        product.reviews.splice(reviewIndex, 1);
+        // Save the product document
+        await product.save();
+
+        // Send a success response
+        res.status(200).json({ message: 'Review deleted successfully' });
+    } catch (error) {
+        // If there was an error, send an error response
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+
+
+
+

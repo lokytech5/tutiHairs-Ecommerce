@@ -11,16 +11,6 @@ exports.createTrainingClassValidator = [
         .withMessage('Description is required')
         .isLength({ min: 10 })
         .withMessage('Description should be at least 10 characters long'),
-    body('startDate')
-        .notEmpty()
-        .withMessage('Start date is required')
-        .isISO8601()
-        .withMessage('Start date must be a valid ISO 8601 date'),
-    body('endDate')
-        .notEmpty()
-        .withMessage('End date is required')
-        .isISO8601()
-        .withMessage('End date must be a valid ISO 8601 date'),
     body('registrationDeadline')
         .notEmpty()
         .withMessage('DeadLine date is required')
@@ -58,14 +48,6 @@ exports.updateTrainingClassValidator = [
         .trim()
         .isLength({ min: 10, max: 500 })
         .withMessage('Description must be between 10 and 500 characters'),
-    body('startDate')
-        .optional()
-        .isISO8601()
-        .withMessage('Invalid date format for startDate'),
-    body('endDate')
-        .optional()
-        .isISO8601()
-        .withMessage('Invalid date format for endDate'),
     body('type')
         .optional()
         .isMongoId()

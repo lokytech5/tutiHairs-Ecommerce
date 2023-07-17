@@ -50,8 +50,6 @@ exports.createCuratedCollection = async (req, res) => {
             product,
 
         });
-
-        console.log('Saving new Collection:', newCollection);
         await newCollection.save();
         res.status(201).json({ newCollection });
     } catch (error) {

@@ -16,6 +16,16 @@ exports.getAllCategories = async (req, res) => {
     }
 
 };
+
+
+exports.getAllCategoriesWithoutLimit = async (req, res) => {
+    try {
+        const categories = await Category.find();
+        res.status(200).send({ categories });
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+};
 exports.getCategoriesById = async (req, res) => {
     try {
         const category = await Category.findById(req.params.id);

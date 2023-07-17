@@ -32,11 +32,19 @@ const product = mongoose.model('Product', new mongoose.Schema({
         type: Number,
         required: true,
     },
-    ratings: [
+    reviews: [
         {
-            user: {
+            userId: {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: 'User',
+            },
+            username: {
+                type: String,
+                required: true,
+            },
+            review: {
+                type: String,
+                required: true,
             },
             rating: {
                 type: Number,
@@ -44,19 +52,13 @@ const product = mongoose.model('Product', new mongoose.Schema({
             },
         },
     ],
-    reviews: [
-        {
-            user: {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: 'User',
-            },
-            review: {
-                type: String,
-                required: true,
-            },
-        },
-    ],
+
+    averageRating: {
+        type: Number,
+        default: 0,
+    },
 },
+    
     {
         timestamps: true,
     }

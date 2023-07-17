@@ -7,13 +7,6 @@ async function isRegistrationOpen(req, res, next) {
             return res.status(404).json({ error: "Training class not found" });
         }
 
-        const currentDate = new Date();
-        const deadlineDate = new Date(trainingClass.registrationDeadline);
-
-        if (currentDate > deadlineDate) {
-            return res.status(403).json({ error: "Registration is closed for this training class" });
-        }
-
         // Check if the number of registered users is less than the maximum allowed
         if (trainingClass.participants.length >= trainingClass.maxRegistrations) {
             return res.status(403).json({ error: "Registration is closed for this training class, maximum registrations reached" });

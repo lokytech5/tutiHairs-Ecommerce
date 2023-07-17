@@ -15,6 +15,8 @@ const Orders = require('./routes/orders')
 const Cart = require('./routes/shoppingCarts')
 const Payment = require('./routes/payment')
 const curatedCollection = require('./routes/curatedCollection')
+const Services = require('./routes/services')
+const TrainingClassOrder = require('./routes/trainingClassOrder')
 const app = express();
 
 
@@ -40,6 +42,8 @@ app.use('/api/orders', Orders);
 app.use('/api/shoppingCart', Cart);
 app.use('/api/payments', Payment);
 app.use('/api/curatedCollection', curatedCollection);
+app.use('/api/services', Services);
+app.use('/api/trainingClassOrders', TrainingClassOrder);
 
 
 //* Connecting to MongoDB database

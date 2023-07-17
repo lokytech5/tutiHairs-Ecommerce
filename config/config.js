@@ -18,9 +18,17 @@ const paystackConfig = {
 }
 
 
+const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID
+const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN
+const twilioVerifySid = process.env.TWILIO_VERIFY_SID
+
+
 module.exports = {
     config,
     cloudinary,
-    paystackConfig
+    paystackConfig,
+    twilioAccountSid,
+    twilioAuthToken,
+    twilioVerifySid,
 }
 

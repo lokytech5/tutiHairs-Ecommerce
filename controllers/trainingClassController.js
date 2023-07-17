@@ -3,9 +3,13 @@ const bcrypt = require('bcrypt')
 const { validatePhoneNumber } = require('../utils/utils')
 const TrainingClass = require('../models/trainingClass');
 const ClassTypePrice = require('../models/classTypePrice');
+const VerifiedPhoneNumber = require('../models/verifiedPhoneNum');
+const TrainingClassOrder = require('../models/trainingClassOrder');
+const Service = require('../models/service');
 const User = require('../models/user');
 const { isEmail } = require('validator');
 const { sendConfirmationEmailForRegisteredTraningClass } = require('../mails/email');
+const { sendVerificationCode, checkVerificationCode } = require('../api/twilioVerification');
 
 exports.getAllTrainingClasses = async (req, res) => {
     try {
@@ -14,7 +18,7 @@ exports.getAllTrainingClasses = async (req, res) => {
                 path: 'participants.user',
                 select: 'email username profile'
             })
-
+            .populate('selectedServices')
             .populate({
                 path: 'type',
                 select: 'classType price' // Choose the fields you want to display from the ClassTypePrice collection
@@ -34,6 +38,7 @@ exports.getTrainingClassById = async (req, res) => {
     try {
         const trainingClass = await TrainingClass.findById(req.params.id)
             .populate('type')
+            .populate('services')
             .populate({
                 path: 'participants.user',
                 select: 'email username profile'
@@ -60,22 +65,26 @@ exports.createTrainingClasses = async (req, res) => {
         return res.status(400).json({ errors: errors.array() });
     }
 
+    if (!req.file) {
+        return res.status(400).json({ error: 'Image is required' });
+    }
+
 
     try {
 
-        const { title, description, startDate, endDate, type, maxParticipants, maxRegistrations } = req.body;
+        const { title, description, type, maxParticipants, maxRegistrations } = req.body;
 
+        //Getting image url from uploaded file
+        const image = req.file.path;
 
         // Create a new training class object
         const newTrainingClass = new TrainingClass({
             title,
+            image,
             description,
-            startDate,
-            endDate,
             type,
             maxParticipants,
             maxRegistrations,
-            registrationDeadline: new Date(req.body.registrationDeadline),
         });
 
         // Save the new training class object to the database
@@ -111,11 +120,8 @@ exports.updateTrainingClasses = async (req, res) => {
     if (req.body.description) {
         updateData.description = req.body.description;
     }
-    if (req.body.startDate) {
-        updateData.startDate = req.body.startDate;
-    }
-    if (req.body.endDate) {
-        updateData.endDate = req.body.endDate;
+    if (req.body.image) {
+        updateData.image = req.body.image;
     }
     if (req.body.type) {
         updateData.type = req.body.type;
@@ -176,6 +182,7 @@ exports.getUserTrainingClasses = async function (req, res) {
                 path: 'participants.user',
                 select: 'name email' // Choose the fields you want to display from the User collection
             })
+            .populate('services')
             .populate({
                 path: 'type',
                 select: 'classType price' // Choose the fields you want to display from the ClassTypePrice collection
@@ -187,111 +194,220 @@ exports.getUserTrainingClasses = async function (req, res) {
 }
 
 
+exports.verifyPhoneNumber = async (req, res) => {
+    const { phone, code } = req.body;
+
+    const validatedPhoneNumber = validatePhoneNumber(phone);
+
+    try {
+        const status = await checkVerificationCode(validatedPhoneNumber, code);
+
+        if (status !== 'approved') { // 'approved' is the status for a successful verification
+            return res.status(400).send({ error: 'Invalid verification code' });
+        }
+
+        // Mark the phone number as verified
+        await VerifiedPhoneNumber.create({ phone: validatedPhoneNumber });
+        res.status(200).send({ message: 'Phone number verified successfully' });
+
+    } catch (error) {
+
+        if (error.status === 404) { // Check if it's a 'resource not found' error
+            // Check if the phone number has already been verified
+            const existingPhoneNumber = await VerifiedPhoneNumber.findOne({ phone: validatedPhoneNumber });
+            if (existingPhoneNumber) {
+                return res.status(200).send({ error: 'This number has already been verified.' });
+            }
+        }
+        console.log('Error when checking verification code:', error.message);
+        return res.status(500).send({ error: 'Failed to check verification code' });
+    }
+};
+
+
 exports.registerUsersForTrainingClass = async (req, res) => {
 
+    console.log('Starting registerUsersForTrainingClass...');
+
     if (!req.body) {
+        console.log('No request body provided');
         return res.status(400).send({ error: 'Request body is missing' });
     }
 
     const errors = validationResult(req);
+    console.log('Validation errors', errors.array());
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
 
-
     try {
-        let userId = req.user ? req.user._id : null;
-        const trainingClassId = req.params.id; // Get the training class ID from the request parameters
 
+        const trainingClassId = req.params.id;
 
-        let newUser = null;
-        const { email } = req.body;
+        let selectedServices = req.body.selectedServices || [];
 
-        if (!req.user) {
-            const { email, password, username, phone, firstName, lastName } = req.body;
+        const { phone, firstName, lastName } = req.body;
+        console.log('Received data:', phone, firstName, lastName);
 
-            const validatedPhoneNumber = validatePhoneNumber(phone);
-
-            if (!validatedPhoneNumber) {
-                return res.status(400).send({ error: 'Invalid phone number' });
-            }
-
-            if (!firstName || !lastName) {
-                return res.status(400).send({ error: 'First and last names are required' });
-            }
-
-            if (!email || !isEmail(email)) {
-                return res.status(400).send({ error: 'Invalid email address' });
-            }
-
-            userEmail = email;
-
-            const existingUser = await User.findOne({ email });
-
-            if (existingUser) {
-                userId = existingUser._id;
-            } else {
-                newUser = new User({ email, password, username, profile: { firstName, lastName, phone: validatedPhoneNumber } });
-                // Hash the password before saving the new user
-                const salt = await bcrypt.genSalt(10);
-                newUser.password = await bcrypt.hash(newUser.password, salt);
-
-                await newUser.save();
-                userId = newUser._id;
-            }
-        } else {
-            userId = req.user._id;
-            userEmail = req.user.email;
+        if (!phone) {
+            return res.status(400).send({ error: 'Phone are required' })
         }
 
+        if (!firstName || !lastName) {
+            console.log('First and last names are required');
+            return res.status(400).send({ error: 'First and last names are required' });
+        }
+
+        const validatedPhoneNumber = validatePhoneNumber(phone);
+
+        if (!validatedPhoneNumber) {
+            console.log('Invalid phone number');
+            return res.status(400).send({ error: 'Invalid phone number' });
+        }
+
+        const existingVerifiedPhoneNumber = await VerifiedPhoneNumber.findOne({ phone: validatedPhoneNumber });
+
         // Find the training class
-        const trainingClass = await TrainingClass.findById(trainingClassId).populate('participants.user');
+        const trainingClass = await TrainingClass.findById(trainingClassId).populate('participants.user').populate('type');
 
         if (!trainingClass) {
+            console.log('Training class not found');
             return res.status(404).send({ error: 'Training class not found' });
         }
 
         // Check if the maximum number of participants has been reached
         if (trainingClass.participants.length >= trainingClass.maxParticipants) {
+            console.log('This training class has reached the maximum number of participants');
             return res.status(400).send({ error: 'This training class has reached the maximum number of participants' });
         }
-        //const userEmail = req.user ? req.user.email : req.body.email;
 
-        // Check if the user is already registered for the class
+        // Find the services and their costs
+        let totalServiceCost = 0;
+        let services;
+        if (selectedServices.length > 0) {
+            services = await Service.find({ '_id': { $in: selectedServices } });
+
+            if (services.length !== selectedServices.length) {
+                //Some services could not be found
+                return res.status(400).send({ error: 'One or more services not found' });
+            }
+
+            totalServiceCost = services.reduce((total, service) => total + service.price, 0);
+        }
+
+
+        // Assuming your TrainingClass model has a type field which has a price field
+        const totalCost = trainingClass.type.price + totalServiceCost;
+
         const isUserAlreadyRegistered = trainingClass.participants.some((participant) => {
-            return participant.user && participant.user._id.toString() === userId.toString();
+            return participant.user && participant.user._id.toString() === req.user._id.toString();
         });
 
         if (isUserAlreadyRegistered) {
             return res.status(400).send({ error: 'User is already registered for this training class' });
         }
 
-        // Add the user to the participants list and update the training class
-        let updatedTrainingClass = null;
-        if (userId) {
-            trainingClass.participants.push({ user: userId });
-            updatedTrainingClass = await trainingClass.save();
+        //Create a new training class order
+        const newOrder = new TrainingClassOrder({
+            user: req.user._id,
+            trainingClass: trainingClassId,
+            services: selectedServices,
+            totalCost: totalCost,
+            isPaid: false,
+        });
+
+        console.log('Saving new order:', newOrder);
+        try {
+            await newOrder.save();
+        } catch (err) {
+            console.error('Error saving order:', err);
+            return res.status(500).send({ error: 'Error saving order' });
         }
 
-        // Get user data for sending the confirmation email
-        const userToNotify = newUser || await User.findById(userId);
+       
 
-        // Send a confirmation email
-        await sendConfirmationEmailForRegisteredTraningClass(userToNotify, trainingClass);
-        res.status(200).send({ message: 'User registered successfully', trainingClass: updatedTrainingClass });
+        // Add the user to the participants list and update the training class       
+        trainingClass.participants.push({ user: req.user._id, paymentStatus: 'pending', accessStatus: 'pending' });
+
+        // Only add services that aren't already in the selectedServices array
+        selectedServices.forEach((serviceId) => {
+            if (!trainingClass.selectedServices.includes(serviceId)) {
+                trainingClass.selectedServices.push(serviceId);
+            }
+        });
+
+        console.log('Updating training class...');
+        let updatedTrainingClass;
+        let verificationCode
+        updatedTrainingClass = await trainingClass.save();
+
+        if (!existingVerifiedPhoneNumber) {
+            verificationCode = await sendVerificationCode(validatedPhoneNumber);
+        }
+
+        const response = {
+            message: 'User registered successfully',
+            trainingClass: updatedTrainingClass,
+            orderId: newOrder._id,
+            isPhoneVerified: existingVerifiedPhoneNumber ? true : false
+        }
+        console.log('User registered successfully', updatedTrainingClass, verificationCode, newOrder._id);
+       if(verificationCode){
+        response.verificationCode = verificationCode;
+       }
+        res.status(200).send(response);
 
     } catch (error) {
-
-        console.error('Error registering user for the training class:', error.message);
-
-        if (error.code === 11000) {
-            return res.status(400).send({ error: 'This email address has already been used to register for this training class' });
-        }
-
+        console.log('An error occurred:', error);
         res.status(500).send({ error: 'Error registering user for the training class' });
     }
 
 }
+
+//Call this as a callback url after payment is made
+exports.updatePaymentStatus = async (req, res) => {
+    const { userId, trainingClassId } = req.params;
+
+    try {
+        const trainingClass = await TrainingClass.findById(trainingClassId);
+
+        if (!trainingClass) {
+            return res.status(404).send({ error: 'Training class not found' });
+        }
+
+        // Find the participant
+        const participantIndex = trainingClass.participants.findIndex(p => p.user.toString() === userId);
+
+        if (participantIndex === -1) {
+            return res.status(404).send({ error: 'User not found in training class' });
+        }
+
+        // Update the payment status
+        trainingClass.participants[participantIndex].paymentStatus = 'paid';
+        trainingClass.participants[participantIndex].accessStatus = 'granted';
+
+        // Save the updated training class
+        await trainingClass.save();
+
+        // Fetch the user's details
+        const user = await User.findById(userId);
+        if (!user) {
+            console.log(`User with id ${userId} not found`);
+            return res.status(404).send({ error: 'User not found' });
+        }
+
+        // Send confirmation email
+        // Ensure you have a function or utility to send emails
+        await sendConfirmationEmailForRegisteredTraningClass(user, trainingClass)
+
+        res.status(200).send({ message: 'Payment status updated successfully' });
+
+    } catch (error) {
+        console.log('An error occurred:', error);
+        res.status(500).send({ error: 'Error updating payment status' });
+    }
+}
+
 
 
 exports.unregisterUsersForTrainingClass = async (req, res) => {

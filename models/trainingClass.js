@@ -10,12 +10,8 @@ const trainingClass = mongoose.model('TrainingClass', new mongoose.Schema({
         type: String,
         required: true,
     },
-    startDate: {
-        type: Date,
-        required: true,
-    },
-    endDate: {
-        type: Date,
+    image: {
+        type: String,
         required: true,
     },
     type: {
@@ -23,16 +19,16 @@ const trainingClass = mongoose.model('TrainingClass', new mongoose.Schema({
         ref: 'ClassTypePrice',
         required: true,
     },
+    selectedServices: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Service',
+    }],
     maxParticipants: {
         type: Number,
         required: true,
     },
     maxRegistrations: {
         type: Number,
-        required: true,
-    },
-    registrationDeadline: {
-        type: Date,
         required: true,
     },
     participants: [
@@ -45,6 +41,16 @@ const trainingClass = mongoose.model('TrainingClass', new mongoose.Schema({
                 type: Date,
                 default: Date.now,
             },
+            paymentStatus: {
+                type: String,
+                default: 'pending',
+                enum: ['pending', 'paid']
+            },
+            accessStatus: {
+                type: String,
+                default: 'pending',
+                enum: ['pending', 'granted']
+            }
         },
     ],
 }));

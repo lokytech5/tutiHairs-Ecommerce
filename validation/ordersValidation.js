@@ -21,9 +21,13 @@ exports.createOrderValidator = [
         .withMessage('Quantity must be a positive integer'),
 
 
-    body('totalPrice')
-        .isNumeric({ gt: 0 })
-        .withMessage('Total price must be a positive number')
+    body('shipping.method')
+        .notEmpty()
+        .withMessage('Shipping method is required'),
+
+    body('shipping.state')
+        .notEmpty()
+        .withMessage('Shipping state is required')
 ];
 
 
@@ -52,11 +56,15 @@ exports.updateOrderValidator = [
     .withMessage('Quantity must be a positive integer'),
 
 
-    body('totalPrice')
-    .optional()
-    .isNumeric({ gt: 0 })
-    .withMessage('Total price must be a positive number'),
+    body('shipping.method')
+        .optional()
+        .notEmpty()
+        .withMessage('Shipping method cannot be empty'),
 
+    body('shipping.state')
+        .optional()
+        .notEmpty()
+        .withMessage('Shipping state cannot be empty'),
 
     body('status')
     .optional()

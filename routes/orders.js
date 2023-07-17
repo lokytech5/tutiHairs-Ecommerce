@@ -7,11 +7,13 @@ const order = require('../models/order');
 const router = express.Router();
 
 
-router.get('/', orderController.getAllOrders);
-router.get('/:id', orderController.getOrderById);
-router.post('/', createOrderValidator, orderController.createOrder);
-router.put('/:id', orderController.updateOrder);
-router.delete('/:id', orderController.deleteOrder);
+router.get('/', auth, admin, orderController.getAllOrders);
+router.post('/', auth, createOrderValidator, orderController.createOrder);
+router.get('/by/:id', auth, orderController.getOrderById);
+router.get('/:userId', auth, orderController.getOrdersByUserId);
+router.put('/:id', auth, orderController.updateOrder);
+router.put('/:id', auth, orderController.completePurchase)
+router.delete('/:id', auth, orderController.deleteOrder);
 
 
 

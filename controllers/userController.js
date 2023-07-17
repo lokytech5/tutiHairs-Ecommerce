@@ -2,9 +2,11 @@ const _ = require('lodash');
 const User = require('../models/user');
 const Cart = require('../models/shoppingCart');
 const { validationResult } = require('express-validator')
+const { sendVerificationEmail } = require('../mails/email')
 const bcrypt = require('bcrypt')
 const express = require('express');
-const config = require('../config/config')
+const jwt = require('jsonwebtoken');
+const { config } = require('../config/config')
 const cloudinary = config.cloudinary;
 
 
@@ -50,9 +52,17 @@ exports.createUsers = async (req, res) => {
             return res.status(400).json({ msg: 'user already exists' });
         }
 
-        const user = new User(_.pick(req.body, ['username', 'email', 'password']))
+        const user = new User(_.pick(req.body, ['username', 'email', 'password', 'isVerified', 'isAdmin']))
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(user.password, salt)
+
+
+        // Generate a verification token
+        const verificationToken = jwt.sign({ userId: user._id }, config.jwtPrivateKey, { expiresIn: config.jwtExpiresIn });
+
+        // Save the verification token in the user's document in the database
+        user.emailVerificationToken = verificationToken;
+
 
         const savedUser = await user.save();
 
@@ -61,17 +71,17 @@ exports.createUsers = async (req, res) => {
         await cart.save();
 
         const token = user.generateAuthToken();
-        res.header('x-auth-token', token).send(_.pick(savedUser, ['_id', 'username', 'email']));
+
+        // Send a verification email to the user
+        await sendVerificationEmail(user, verificationToken);
+        res.header('x-auth-token', token).send(_.pick(savedUser, ['_id', 'username', 'email', 'isAdmin']));
     } catch (error) {
-        console.error('Error in registration:', error.message);
         res.status(500).send({ error: 'Error saving user to database' });
     }
 }
 
 
 exports.updateUsers = async (req, res) => {
-    console.log('Request body:', req.body);
-    console.log('Request params:', req.params);
 
     if (!req.body) {
         return res.status(400).send({ error: 'Request body is missing' });
@@ -180,7 +190,6 @@ exports.getUserProfile = async (req, res) => {
 
 
 exports.updateUserProfile = async (req, res) => {
-    console.log('Request body:', req.body);
     if (!req.body) {
         return res.status(400).send({ error: 'Request body is missing' });
     }
@@ -218,7 +227,6 @@ exports.updateUserProfile = async (req, res) => {
 
 
 exports.uploadAvatar = async (req, res) => {
-    console.log('Request file:', req.file);
     if (!req.file) {
         return res.status(400).send({ error: 'Avatar file is missing' });
     }

@@ -1,10 +1,14 @@
 const express = require('express');
-const paymentController = require('../payment/paymentController');
+const ecommercePayment = require('../payment/ecommercePayment');
+const trainingPayment = require('../payment/trainingPayment')
 
 const router = express.Router();
 
-router.post('/', paymentController.initializeTransaction);
-router.post('/verify', paymentController.verifyTransaction);
-router.post('/webhook', express.json({ type: 'application/json' }), paymentController.handleWebhook);
+router.post('/ecommerce/', ecommercePayment.initializeTransaction);
+router.post('/ecommerce/verify', ecommercePayment.verifyTransaction);
+router.post('/ecommerce/webhook', express.json({ type: 'application/json' }), ecommercePayment.handleWebhook);
+
+router.post('/training/', trainingPayment.initializeTransaction);
+router.post('/taining/verify', trainingPayment.verifyTransaction);
 
 module.exports = router;

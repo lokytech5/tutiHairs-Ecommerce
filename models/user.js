@@ -33,16 +33,22 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: null,
     },
+    isVerified: {
+        type: Boolean,
+        default: false,
+    },
+    emailVerificationToken: {
+        type: String,
+        default: null,
+    },
     profile: {
         firstName: {
             type: String,
-
             minlength: 2,
             maxlength: 50
         },
         lastName: {
             type: String,
-
             minlength: 2,
             maxlength: 50
         },

@@ -11,7 +11,7 @@ router.post('/', auth, cartItemValidation, shoppingCartController.addItemToCart)
 router.post('/syncGuestCart', optionalAuth, guestCart, shoppingCartController.syncGuestCart);
 router.get('/summary', auth, shoppingCartController.getCartSummary);
 router.put('/sync', auth, shoppingCartController.syncCart);
-router.delete('/', auth, shoppingCartController.emptyCart);
+router.delete('/empty', auth, shoppingCartController.emptyCart);
 router.delete('/:productId', auth, shoppingCartController.deleteCartItem);
 
 

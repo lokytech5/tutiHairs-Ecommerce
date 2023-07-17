@@ -1,4 +1,3 @@
-
 const _ = require('lodash');
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
@@ -7,7 +6,6 @@ const { validationResult } = require('express-validator')
 const bcrypt = require('bcrypt');
 const { config } = require('../config/config')
 const { sendOTPEmail } = require('../mails/email')
-
 
 
 function generateOTPAndToken(user) {
@@ -39,7 +37,6 @@ exports.createAuth = async (req, res) => {
         if (!validPassword) {
             return res.status(400).json({ msg: 'Invalid username or password' });
         }
-        console.log('JWT private key:', config.jwtPrivateKey);
         const token = user.generateAuthToken();
 
         // Set JWT token as HttpOnly cookie
@@ -48,11 +45,42 @@ exports.createAuth = async (req, res) => {
         res.send({ token, username: user.username });
 
     } catch (error) {
-        console.error('Error stack:', error.stack);
-        console.error('Error in createAuth:', error.message);
         res.status(500).send({ error: 'Error during authentication process', details: error.message });
     }
 }
+
+
+exports.verifyEmail = async (req, res) => {
+    const token = req.body.token;
+
+    if (!token) {
+        return res.status(400).send({ error: 'Token is missing' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, config.jwtPrivateKey);
+
+        if (!decoded || !decoded.userId) {
+            return res.status(400).json({ message: 'Invalid token' });
+        }
+
+        const user = await User.findById(decoded.userId);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (!user.isVerified) {
+            user.isVerified = true; // if user model has a isVerified field
+            await user.save();
+        }
+
+        res.status(200).json({ message: 'Email has been successfully verified' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error processing your request', error: error.message });
+    }
+};
+
 
 
 exports.forgotPassword = async (req, res) => {
@@ -65,11 +93,11 @@ exports.forgotPassword = async (req, res) => {
         }
 
         const { otp, token } = generateOTPAndToken(user);
-        console.log("Generated token: ", token);
+
         user.resetPasswordToken = token;
-        console.log("User's resetPasswordToken before saving: ", user.resetPasswordToken);
+
         await user.save();
-        console.log("User's resetPasswordToken after saving: ", user.resetPasswordToken);
+
         await sendOTPEmail(user, otp, token); // Send the OTP to the user's email
 
         res.status(200).json({ message: 'An OTP and a password reset link have been sent to your email' });
@@ -83,9 +111,8 @@ exports.resetPassword = async (req, res) => {
     const { otp, newPassword, token } = req.body;
 
     try {
-        console.log("Token: ", token);
+
         const decoded = jwt.verify(token, config.jwtPrivateKey);
-        console.log("Decoded JWT: ", decoded);
 
         if (!decoded || !decoded.id || !decoded.otp) {
             return res.status(400).json({ message: 'Invalid token' });
@@ -96,13 +123,10 @@ exports.resetPassword = async (req, res) => {
         }
 
         const user = await User.findById(decoded.id);
-        console.log("User found: ", user);
+
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
-
-        console.log("User's resetPasswordToken: ", user.resetPasswordToken);
-        console.log("Expected token: ", token);
 
         if (user.resetPasswordToken !== token) {
             return res.status(400).json({ message: 'Invalid token' });

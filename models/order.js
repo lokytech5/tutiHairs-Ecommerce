@@ -6,6 +6,46 @@ const order = mongoose.model('Order', new mongoose.Schema({
         ref: 'User',
         required: true,
     },
+    shipping: {
+        name: {
+            type: 'string',
+            minlength: 2,
+            maxlength: 100,
+            required: true,
+        },
+        address: {
+            type: 'string',
+            required: true,
+        },
+        city: {
+            type: 'string',
+            required: true,
+        },
+        state: {
+            type: 'string',
+            required: true,
+        },
+        postalCode: {
+            type: 'Number',
+            required: true,
+        },
+        phone: {
+            type: String,
+            minlength: 10,
+            maxlength: 15,
+            required: true,
+        },
+
+        method: {
+            type: 'String',
+            required: true,
+        },
+
+        cost: {
+            type: 'Number',
+            required: true,
+        }
+    },
     items: [
         {
             product: {
@@ -28,7 +68,7 @@ const order = mongoose.model('Order', new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['Pending', 'Shipped', 'Delivered', 'Cancelled'],
+        enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'],
         default: 'Pending',
     },
 }));
