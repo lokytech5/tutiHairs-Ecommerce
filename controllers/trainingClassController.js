@@ -311,7 +311,7 @@ exports.registerUsersForTrainingClass = async (req, res) => {
         const newOrder = new TrainingClassOrder({
             user: req.user._id,
             trainingClass: trainingClassId,
-            services: selectedServices,
+            services: services,
             totalCost: totalCost,
             isPaid: false,
         });
@@ -323,8 +323,6 @@ exports.registerUsersForTrainingClass = async (req, res) => {
             console.error('Error saving order:', err);
             return res.status(500).send({ error: 'Error saving order' });
         }
-
-       
 
         // Add the user to the participants list and update the training class       
         trainingClass.participants.push({ user: req.user._id, paymentStatus: 'pending', accessStatus: 'pending' });

@@ -20,7 +20,6 @@ const TrainingClassOrder = require('./routes/trainingClassOrder')
 const app = express();
 
 
-
 //*Initalizing body parser here
 app.use(bodyParser.urlencoded({
     extended: true

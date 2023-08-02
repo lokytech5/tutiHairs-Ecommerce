@@ -4,6 +4,7 @@ const paystack = require('paystack')(paystackConfig.secretKey);
 const crypto = require('crypto');
 
 exports.initializeTransaction = async (req, res) => {
+    console.log(req.body);
     const params = JSON.stringify({
         email: req.body.email,
         amount: req.body.amount * 100,
@@ -11,6 +12,8 @@ exports.initializeTransaction = async (req, res) => {
             paymentOption: req.body.paymentOption, // Pass the payment option in the request body
         },
     });
+
+    console.log("Params for Paystack:", params);
 
     const options = {
         hostname: 'api.paystack.co',

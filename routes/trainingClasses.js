@@ -23,6 +23,7 @@ router.put('/:id', updateTrainingClassValidator, trainingClassController.updateT
 router.delete('/:id', trainingClassController.deleteTrainingClasses);
 
 
+router.put('/:trainingClassId/updatePaymentStatus/:userId', trainingClassController.updatePaymentStatus);
 
 
 module.exports = router;

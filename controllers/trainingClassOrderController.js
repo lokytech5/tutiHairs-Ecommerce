@@ -11,6 +11,7 @@ exports.getTrainingClassOrderById = async (req, res) => {
         console.log('Attempting to find trainingClassOrder with id:', req.params.id);
         const trainingClassOrder = await TrainingClassOrder.findById(req.params.id)
             .populate('user')
+            .populate('services')
             .populate({
                 path: 'trainingClass',
                 populate: [

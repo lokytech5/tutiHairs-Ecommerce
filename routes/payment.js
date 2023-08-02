@@ -9,6 +9,6 @@ router.post('/ecommerce/verify', ecommercePayment.verifyTransaction);
 router.post('/ecommerce/webhook', express.json({ type: 'application/json' }), ecommercePayment.handleWebhook);
 
 router.post('/training/', trainingPayment.initializeTransaction);
-router.post('/taining/verify', trainingPayment.verifyTransaction);
+router.post('/training/verify', trainingPayment.verifyTransaction);
 
 module.exports = router;
