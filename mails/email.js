@@ -1,18 +1,23 @@
 require('dotenv').config();
 const nodemailer = require('nodemailer')
+const sgMail = require('@sendgrid/mail')
 const moment = require('moment');
 const juice = require('juice');
 
 
+//configuring sendGird email
+sgMail.setApiKey(process.env.SENDGRID_API_KEY)
+
+
 //*Configuring NodeMail Notification for Gmail
-const transporter = nodemailer.createTransport({
-  service: 'Gmail',
-  port: 465,
-  auth: {
-    user: process.env.GMAIL_USER_NAME,
-    pass: process.env.GMAIL_PASSWORD,
-  }
-})
+// const transporter = nodemailer.createTransport({
+//   service: 'Gmail',
+//   port: 465,
+//   auth: {
+//     user: process.env.GMAIL_USER_NAME,
+//     pass: process.env.GMAIL_PASSWORD,
+//   }
+// })
 
 
 
@@ -97,18 +102,25 @@ async function sendConfirmationEmailForRegisteredTraningClass(user, trainingClas
     html: inlinedTemplate,
   };
 
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.log('Error sending registration email: ', error);
-    } else {
-      console.log('Registration email sent: ', info.response);
-    }
-  });
+  // transporter.sendMail(mailOptions, (error, info) => {
+  //   if (error) {
+  //     console.log('Error sending registration email: ', error);
+  //   } else {
+  //     console.log('Registration email sent: ', info.response);
+  //   }
+  // });
+
+  try {
+    await sgMail.send(mailOptions);
+    console.log('Registration email sent successfully');
+  } catch (error) {
+    console.log('Error sending registration email: ', error);
+  }
 }
 
 
 async function sendOTPEmail(user, otp, token) {
-  const resetLink = `http://localhost:3000/reset-password?token=${token}`;
+  const resetLink = `http://localhost:3000/resetPassword?token=${token}`;
   const mailOptions = {
     from: `"Tuti Hair" <${process.env.TUTI_HAIRS_MAIL}>`,
     to: user.email,
@@ -123,17 +135,24 @@ async function sendOTPEmail(user, otp, token) {
     `,
   };
 
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.log('Error sending OTP email: ', error);
-    } else {
-      console.log('OTP email sent: ', info.response);
-    }
-  });
+  // transporter.sendMail(mailOptions, (error, info) => {
+  //   if (error) {
+  //     console.log('Error sending OTP email: ', error);
+  //   } else {
+  //     console.log('OTP email sent: ', info.response);
+  //   }
+  // });
+
+  try {
+    await sgMail.send(mailOptions);
+    console.log('Otp send successful');
+  } catch (error) {
+    console.log('Error sending OTP email: ', error);
+  }
 }
 
 async function sendVerificationEmail(user, token) {
-  const verifyLink = `http://localhost:3000/verify-email?token=${token}`;
+  const verifyLink = `http://localhost:3000/verifyUser?token=${token}`;
   const mailOptions = {
     from: `"Tuti Hair" <${process.env.TUTI_HAIRS_MAIL}>`,
     to: user.email,
@@ -146,13 +165,23 @@ async function sendVerificationEmail(user, token) {
     `,
   };
 
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.log('Error sending verification email: ', error);
-    } else {
-      console.log('Verification email sent: ', info.response);
+  // transporter.sendMail(mailOptions, (error, info) => {
+  //   if (error) {
+  //     console.log('Error sending verification email: ', error);
+  //   } else {
+  //     console.log('Verification email sent: ', info.response);
+  //   }
+  // });
+
+  try {
+    await sgMail.send(mailOptions);
+    console.log('Verification email sent');
+  } catch (error) {
+    console.log('Error sending verification email: ', error);
+    if (error.response) {
+      console.error('Error details:', error.response.body);
     }
-  });
+  }
 }
 
 async function sendOrderConfirmationEmail(userEmail, orderDetails) {
@@ -181,13 +210,19 @@ async function sendOrderConfirmationEmail(userEmail, orderDetails) {
     html: inlinedTemplate,
   };
 
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.log('Error sending order confirmation email: ', error);
-    } else {
-      console.log('Order confirmation email sent: ', info.response);
-    }
-  });
+  // transporter.sendMail(mailOptions, (error, info) => {
+  //   if (error) {
+  //     console.log('Error sending order confirmation email: ', error);
+  //   } else {
+  //     console.log('Order confirmation email sent: ', info.response);
+  //   }
+  // });
+  try {
+    await sgMail.send(mailOptions);
+    console.log('Order confirmation email sent');
+  } catch (error) {
+    console.log('Error sending order confirmation email: ', error);
+  }
 }
 
 

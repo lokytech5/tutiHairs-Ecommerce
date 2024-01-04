@@ -42,7 +42,7 @@ exports.createAuth = async (req, res) => {
         // Set JWT token as HttpOnly cookie
         res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'strict' });
 
-        res.send({ token, username: user.username });
+        res.send({ token, username: user.username, _id: user._id, email: user.email, avatar: user.avatar});
 
     } catch (error) {
         res.status(500).send({ error: 'Error during authentication process', details: error.message });

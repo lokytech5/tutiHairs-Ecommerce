@@ -55,7 +55,7 @@ mongoose.connect('mongodb://127.0.0.1:27017/tutiEcommerceDB', { useNewUrlParser:
 app.use(express.static('public'));
 
 
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 5001;
 app.listen(port, function () {
     console.log(`Listening on port ${port}`);
 })

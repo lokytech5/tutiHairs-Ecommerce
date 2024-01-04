@@ -7,6 +7,7 @@ exports.initializeTransaction = async (req, res) => {
     const params = JSON.stringify({
         email: req.body.email,
         amount: req.body.amount * 100,
+        callback_url: "http://localhost:3000/paymentCallbackPage",
         metadata: {
             paymentOption: req.body.paymentOption, // Pass the payment option in the request body
         },

@@ -56,6 +56,7 @@ const order = mongoose.model('Order', new mongoose.Schema({
                 type: Number,
                 required: true,
             },
+            selectedColor: { type: String }
         },
     ],
     totalPrice: {

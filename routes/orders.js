@@ -11,8 +11,8 @@ router.get('/', auth, admin, orderController.getAllOrders);
 router.post('/', auth, createOrderValidator, orderController.createOrder);
 router.get('/by/:id', auth, orderController.getOrderById);
 router.get('/:userId', auth, orderController.getOrdersByUserId);
-router.put('/:id', auth, orderController.updateOrder);
-router.put('/:id', auth, orderController.completePurchase)
+router.put('/update/:id', auth, orderController.updateOrder);
+router.put('/complete/:id', auth, orderController.completePurchase)
 router.delete('/:id', auth, orderController.deleteOrder);
 
 

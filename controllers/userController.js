@@ -7,7 +7,8 @@ const bcrypt = require('bcrypt')
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { config } = require('../config/config')
-const cloudinary = config.cloudinary;
+const cloudinary = require('cloudinary').v2;
+
 
 
 exports.getAllUsers = async (req, res) => {
@@ -236,13 +237,15 @@ exports.uploadAvatar = async (req, res) => {
         if (!user) {
             return res.status(404).send({ error: 'User not found' });
         }
-
         if (req.file) {
-            // Upload the avatar to Cloudinary and update the user's avatar field
-            const result = await cloudinary.uploader.upload(req.file.path);
-            user.avatar = result.secure_url;
+            try {
+                const result = await cloudinary.uploader.upload(req.file.path);
+                user.avatar = result.secure_url;
+            } catch (uploadError) {
+                console.error("Error uploading file to Cloudinary:", uploadError); // Log upload error
+                throw uploadError; // Re-throw the error to be caught by the outer catch block
+            }
         }
-
         await user.save();
 
         res.send({ message: 'Avatar uploaded successfully', user });
@@ -250,6 +253,7 @@ exports.uploadAvatar = async (req, res) => {
         res.status(500).send({ error: error.message });
     }
 };
+
 
 
 exports.updateNotificationPreferences = async (req, res) => {

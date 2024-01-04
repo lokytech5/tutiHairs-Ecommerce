@@ -45,41 +45,6 @@ function formatOrder(order) {
     };
 }
 
-function calculateShippingCost(method, location) {
-    const adjustedLocation = location.replace(" State", "").toLowerCase();
-
-    // Convert state arrays to lowercase
-    const northStates = ['Adamawa', 'Kaduna', 'Niger', 'Jigawa', 'Plateau', 'Gombe', 'Sokoto', 'Kano', 'Kebbi', 'Bauchi', 'Nasarawa', 'Borno', 'Yobe', 'Kwara', 'Kogi', 'Taraba', 'Benue', 'Katsina', 'Zamfara'].map(state => state.toLowerCase());
-    const southStates = ['Akwa Ibom', 'Bayelsa', 'Cross River', 'Delta', 'Edo', 'Ekiti', 'Rivers'].map(state => state.toLowerCase());;
-    const eastStates = ['Abia', 'Ebonyi', 'Anambra', 'Enugu', 'Imo'].map(state => state.toLowerCase());
-    const westStates = ['Lagos', 'Ogun', 'Ondo', 'Osun', 'Oyo'].map(state => state.toLowerCase());
-
-    let baseCost;
-    if (northStates.includes(adjustedLocation)) {
-        baseCost = 4500;
-    } else if (southStates.includes(adjustedLocation)) {
-        baseCost = 4000;
-    } else if (eastStates.includes(adjustedLocation)) {
-        baseCost = 4000;
-    } else if (westStates.includes(adjustedLocation)) {
-        baseCost = 3500;
-    } else {
-        // Return some default shipping cost for locations not in the north or south
-        throw new Error(`Invalid state: ${location}`);
-    }
-
-    switch (method) {
-        case "standard":
-            return baseCost + 1000;
-        case "express":
-            return baseCost + 2000;
-        default:
-            throw new Error(`Invalid shipping method: ${method}`);
-    }
-}
-
-
-
 exports.getAllOrders = async (req, res) => {
     try {
         const orders = await Orders.find().populate('user items.product');
@@ -129,9 +94,8 @@ exports.getOrdersByUserId = async (req, res) => {
     }
 };
 
-
+//new code
 exports.createOrder = async (req, res) => {
-
     if (!req.body) {
         return res.status(400).send({ error: 'Request body is missing' });
     }
@@ -142,36 +106,55 @@ exports.createOrder = async (req, res) => {
     }
 
     try {
-        let shippingCost;
-        try {
-            //Calculate the shipping cost
-            shippingCost = calculateShippingCost(req.body.shipping.method, req.body.shipping.state);
-            // Check for an error from calculateShippingCost
-            if (shippingCost.error) {
-                return res.status(400).json({ error: shippingCost.error });
-            }
-        } catch (error) {
-            return res.status(400).json({ error: error.message });
-        }
-
         // Fetch product prices from the database
         const productIds = req.body.items.map(item => item.product);
         const products = await Product.find({ _id: { $in: productIds } });
+
+        // Check if all products exist
+        if (products.length !== productIds.length) {
+            return res.status(400).send({ error: 'One or more products are invalid or do not exist' });
+        }
+
         const productMap = products.reduce((acc, product) => {
             acc[product._id] = product;
             return acc;
         }, {});
 
-        //Include the shipping cost in the order
+         // Check for product availability and item data consistency
+         for (let item of req.body.items) {
+            const product = productMap[item.product];
+            if (!product || item.quantity <= 0 || !Number.isInteger(item.quantity)) {
+                return res.status(400).send({ error: 'Invalid product quantity or product does not exist' });
+            }
+            if (item.selectedColor && product.availableColors && !product.availableColors.includes(item.selectedColor)) {
+                return res.status(400).send({ error: 'Selected color is not available for this product' });
+            }
+        }
+
+         // Validate shipping details
+         const { shipping } = req.body;
+         if (!shipping || !shipping.cost || typeof shipping.cost !== 'number') {
+             return res.status(400).send({ error: 'Invalid shipping cost' });
+         }
+
+         // Validate shipping info completeness
+        if (!shipping.address || !shipping.city || !shipping.state || !shipping.postalCode || !shipping.phone) {
+            return res.status(400).send({ error: 'Incomplete shipping details' });
+        }
+
+        // Use the provided shipping cost from the frontend
+        const shippingCost = req.body.shipping.cost;
+
         const newOrder = new Orders({
             ...req.body,
             shipping: {
-                ...req.body.shipping,
-                cost: shippingCost
-            },
-            items: req.body.items.map(item => ({ // map each item of the array
-                product: productMap[item.product], // replace string id with product object
+                 ...shipping,
+                 cost: shippingCost
+                     },
+            items: req.body.items.map(item => ({
+                product: productMap[item.product],
                 quantity: item.quantity,
+                selectedColor: item.selectedColor
             })),
             totalPrice: req.body.items.reduce(
                 (total, item) => {
@@ -179,14 +162,16 @@ exports.createOrder = async (req, res) => {
                 },
                 0
             ) + shippingCost,
+            status: 'Pending',  // Initial order status
+            orderDate: new Date() // Current date/time
         });
 
         await newOrder.save();
 
         // Populate the order with the necessary product details
         const populatedOrder = await Orders.findById(newOrder._id)
-            .populate('user', 'username email') // <- only username and email fields
-            .populate('items.product', 'name price'); // <- only name and price fields
+            .populate('user', 'username email')
+            .populate('items.product', 'name price');
 
         // Use the formatOrder function to format the response
         const formattedOrder = formatOrder(populatedOrder);
@@ -286,6 +271,7 @@ exports.deleteOrder = async (req, res) => {
 
 exports.completePurchase = async (req, res) => {
     try {
+        console.log("Received order ID:", req.params.id);  
         const updatedOrder = await Orders.findByIdAndUpdate(
             req.params.id,
             { status: 'Processing' },
@@ -293,8 +279,11 @@ exports.completePurchase = async (req, res) => {
         );
 
         if (!updatedOrder) {
+            console.log("Order not found for ID:", req.params.id);
             return res.status(404).json({ error: 'Order not found' });
         }
+
+        console.log("Order updated:", updatedOrder); 
 
         // Populate the order with the necessary product details
         const populatedOrder = await Orders.findById(updatedOrder._id)
@@ -302,12 +291,14 @@ exports.completePurchase = async (req, res) => {
             .populate('items.product', 'name price'); // <- only name and price fields
 
         const formattedUpdatedOrder = formatOrder(populatedOrder);
-
+        console.log("Order to be emailed:", formattedUpdatedOrder);
         // Send confirmation email after purchase
         await sendOrderConfirmationEmail(populatedOrder.user.email, formattedUpdatedOrder);
+        console.log('Email sent for order ID:', req.params.id);
 
         res.status(200).json(formattedUpdatedOrder);
     } catch (error) {
+        console.error("Error in completePurchase:", error); 
         res.status(500).json({ error: error.message });
     }
 };

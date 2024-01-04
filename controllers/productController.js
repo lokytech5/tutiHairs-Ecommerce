@@ -1,27 +1,70 @@
 const Product = require('../models/product');
 const User = require('../models/user');
+const Category = require('../models/category');
 const ProductView = require('../models/productView')
 const { validationResult } = require('express-validator')
 
 
+const determineSortOrder = (sortOrder) => {
+    if (sortOrder === "asc") {
+        return { price: 1 }; // Ascending
+    } else if (sortOrder === "desc") {
+        return { price: -1 }; // Descending
+    }
+    return {};
+}
+
+const determineCategoryQuery = async (category, size) => {
+    if (size) {
+        const categoriesWithSize = await Category.find({ inches: size });
+        const categoryIdsWithSize = categoriesWithSize.map(cat => cat._id);
+
+        if (category) {
+            if (!categoryIdsWithSize.includes(category)) {
+                return null;
+            }
+            return category;
+        }
+        return { $in: categoryIdsWithSize };
+    }
+    return category;
+}
+
 exports.getAllProduct = async (req, res) => {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 5;
-    const skip = (page - 1) * limit;
+    const skip = parseInt(req.query.skip) || 0;
+    const limit = parseInt(req.query.limit) || 6;
     const search = req.query.search || '';
+    const category = req.query.category;
+    const size = parseInt(req.query.size);
+    const sortOrder = req.query.sortOrder;
+
+    const sortCriteria = determineSortOrder(sortOrder);
+
+    // Create a query object for filtering
+    const query = { name: { $regex: search, $options: 'i' } };
+
+    const categoryQuery = await determineCategoryQuery(category, size);
+    if (categoryQuery === null) {
+        return res.status(200).send({ product: [], totalPages: 0 });
+    }
+    if (categoryQuery) {
+        query.category = categoryQuery;
+    }
+
     try {
-        const product = await Product.find({ name: { $regex: search, $options: 'i' } })
+        const product = await Product.find(query)
             .skip(skip)
             .limit(limit)
+            .sort(sortCriteria)
             .populate('category');
-        const totalProduct = await Product.countDocuments({ name: { $regex: search, $options: 'i' } });
+        const totalProduct = await Product.countDocuments(query);
         const totalPages = Math.ceil(totalProduct / limit);
-        res.status(200).send({ product, totalPages })
+        res.status(200).send({ product, totalPages });
     } catch (error) {
         res.status(500).send({ error: 'Error retrieving products from database' });
     }
-
 }
+
 
 exports.getProductById = async (req, res) => {
     try {
@@ -49,6 +92,31 @@ exports.getProductById = async (req, res) => {
     }
 }
 
+exports.getLatestProduct = async (req, res) => {
+    const skipCount = parseInt(req.query.skip) || 0;
+    const itemsPerPage = 4;  // Or whatever limit you'd like
+
+    try {
+        const totalItems = await Product.countDocuments();
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        
+        const latestProducts = await Product.find()
+            .sort({ createdAt: -1 })
+            .skip(skipCount)
+            .limit(itemsPerPage);
+        
+        if (latestProducts.length === 0) {
+            return res.status(404).json({ error: 'No products found' });
+        }
+
+        res.status(200).json({ latestProducts, totalPages });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
+
 
 exports.getProductViewCount = async (req, res) => {
     try {
@@ -62,6 +130,8 @@ exports.getProductViewCount = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+
 
 
 exports.getProductsByCategory = async (req, res) => {

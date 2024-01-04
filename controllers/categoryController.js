@@ -26,6 +26,7 @@ exports.getAllCategoriesWithoutLimit = async (req, res) => {
         res.status(500).send({ error: error.message });
     }
 };
+
 exports.getCategoriesById = async (req, res) => {
     try {
         const category = await Category.findById(req.params.id);

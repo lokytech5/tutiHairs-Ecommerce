@@ -9,6 +9,7 @@ const router = express.Router();
 router.get('/', productController.getAllProduct);
 router.get('/category/:categoryId', productController.getProductsByCategory);
 router.get('/category/no-limit/:categoryId', productController.getProductsByCategoryWithOutLimit);
+router.get('/latest', productController.getLatestProduct);
 router.get('/:id', productController.getProductById);
 router.post('/', productUpload.single('image'), createProductValidator, productController.createProduct);
 router.put('/:id', updateProductValidator, productController.updateProduct);
