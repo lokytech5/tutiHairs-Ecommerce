@@ -47,7 +47,7 @@ app.use('/api/trainingClassOrders', TrainingClassOrder);
 
 //* Connecting to MongoDB database
 mongoose.set('strictQuery', true);
-mongoose.connect('mongodb://127.0.0.1:27017/tutiEcommerceDB', { useNewUrlParser: true })
+mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true })
     .then(() => console.log('Connected to MongoDB'))
     .catch((err) => console.log('could not connect to MongoDB', err));
 
