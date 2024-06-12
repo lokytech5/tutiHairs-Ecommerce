@@ -27,7 +27,11 @@ app.use(bodyParser.urlencoded({
 
 app.use(cookieParser());
 
-app.use(cors());
+app.use(cors({
+    origin: url,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 //*calling each route here
 app.use(express.json());
