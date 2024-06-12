@@ -46,24 +46,21 @@ app.use('/api/trainingClassOrders', TrainingClassOrder);
 
 
 //* Connecting to MongoDB database
+// mongoose.set('strictQuery', true);
+// mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true })
+//     .then(() => console.log('Connected to MongoDB'))
+//     .catch((err) => console.log('could not connect to MongoDB', err));
+
+    //*Connecting to MongoDB database server
 mongoose.set('strictQuery', true);
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true })
     .then(() => console.log('Connected to MongoDB'))
     .catch((err) => console.log('could not connect to MongoDB', err));
 
-
 app.use(express.static('public'));
 
 
-const port = process.env.PORT || 5001;
+const port = process.env.PORT || 8000;
 app.listen(port, function () {
     console.log(`Listening on port ${port}`);
 })
-
-
-// const port = config.get('port') || 5000;
-// const server = app.listen(port, function () {
-//     console.log(`Listening on port ${port}`);
-// });
-
-// module.exports = { app, server };
