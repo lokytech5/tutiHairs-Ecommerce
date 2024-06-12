@@ -19,7 +19,7 @@ const Services = require('./routes/services')
 const TrainingClassOrder = require('./routes/trainingClassOrder')
 const app = express();
 
-const allowedOrigins = ['https://tuti-app-five.vercel.app'];
+const allowedOrigins = ['https://tuti-app-five.vercel.app', 'https://api.lokytech.co'];
 
 
 //*Initalizing body parser here
