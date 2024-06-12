@@ -19,6 +19,8 @@ const Services = require('./routes/services')
 const TrainingClassOrder = require('./routes/trainingClassOrder')
 const app = express();
 
+const url = process.env.FRONTEND_URL || 'http://localhost:3000';
+
 
 //*Initalizing body parser here
 app.use(bodyParser.urlencoded({
