@@ -19,7 +19,7 @@ const Services = require('./routes/services')
 const TrainingClassOrder = require('./routes/trainingClassOrder')
 const app = express();
 
-const url = 'https://tuti-app-five.vercel.app'
+const allowedOrigins = ['https://tuti-app-five.vercel.app'];
 
 
 //*Initalizing body parser here
@@ -30,7 +30,13 @@ app.use(bodyParser.urlencoded({
 app.use(cookieParser());
 
 app.use(cors({
-    origin: url,
+    origin: function(origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
