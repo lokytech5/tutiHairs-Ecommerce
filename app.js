@@ -19,7 +19,7 @@ const Services = require('./routes/services')
 const TrainingClassOrder = require('./routes/trainingClassOrder')
 const app = express();
 
-const allowedOrigins = ['https://tuti-app-five.vercel.app', 'https://api.lokytech.co'];
+const allowedOrigins = ['https://tuti-app-five.vercel.app', 'http://localhost:3000'];
 
 
 //*Initalizing body parser here
@@ -57,9 +57,9 @@ app.use('/api/services', Services);
 app.use('/api/trainingClassOrders', TrainingClassOrder);
 
 
-//* Connecting to MongoDB database
+// Connecting to MongoDB database
 // mongoose.set('strictQuery', true);
-// mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true })
+// mongoose.connect("mongodb://127.0.0.1:27017/tutiEcommerceDB", { useNewUrlParser: true })
 //     .then(() => console.log('Connected to MongoDB'))
 //     .catch((err) => console.log('could not connect to MongoDB', err));
 
