@@ -3,14 +3,17 @@ services:
     image: mongo:4
     container_name: tutihair_db
     restart: always
-    ports:
-      - "27017:27017"
     volumes:
       - ./tutiEcommerceDB:/data/db
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
       MONGO_INITDB_DATABASE: admin
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
     networks:
       - app-network
 
@@ -21,8 +24,15 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    volumes:
+      - ./backend:/app
     depends_on:
       - db
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
     networks:
       - app-network
 
