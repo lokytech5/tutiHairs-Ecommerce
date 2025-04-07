@@ -29,7 +29,6 @@ services:
     cpus: 0.6
     networks:
       - app-network
-
-networks:
-  app-network:
-    external: true
+# networks:
+#   app-network:
+#     external: true
