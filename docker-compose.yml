@@ -9,11 +9,8 @@ services:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
       MONGO_INITDB_DATABASE: admin
-    deploy:
-      resources:
-        limits:
-          cpus: "0.7"
-          memory: 600M
+    mem_limit: 600m
+    cpus: 0.7
     networks:
       - app-network
 
@@ -28,11 +25,8 @@ services:
       - ./backend:/app
     depends_on:
       - db
-    deploy:
-      resources:
-        limits:
-          cpus: "0.6"
-          memory: 500M
+    mem_limit: 500m
+    cpus: 0.6
     networks:
       - app-network
 
